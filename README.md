@@ -1,2 +1,1 @@
- # Nahuel Yazbek's personal page
-## Im Nahuel. I'm figuring this all out.
+## Im Nahuel. In the process of understanding Github Pages and Jekyll.
