@@ -1,22 +1,44 @@
+/* ── Heading anchors (show # on hover) ─────────────── */
 h2::after, h3::after {
-    content: "#";
-    position: relative;
-    top: 0em;
-    left: 0.5em;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.3s;
+  content: " #";
+  font-size: 0.8em;
+  color: var(--border);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
-h2::after {font-size: 1.4em;}
-h3::after {font-size: 1.2em;}
-
 h2:hover::after, h3:hover::after {
-    visibility: visible;
-    opacity: 1;
+  visibility: visible;
+  opacity: 1;
 }
 
-div.backButton{
-  position:fixed; 
-  top:80%;
-  right: 5%;
+/* ── Post navigation bar (fixed bottom-right) ───────── */
+.backButton {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-end;
+}
+.backButton a {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.25rem 0.6rem;
+  background: var(--bkg);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.backButton a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .backButton { bottom: 1rem; right: 1rem; }
 }
