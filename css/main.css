@@ -1,10 +1,23 @@
+/* Dark mode by default */
 :root {
-  --bkg: #fffff8;
-  --text: #222;
-  --muted: #6b6b6b;
-  --accent: #1a4a6b;
-  --border: #d8d8d0;
-  --code-bkg: #f2f2ec;
+  --bkg: #111110;
+  --text: #d6d2c8;
+  --muted: #888884;
+  --accent: #7ab3cc;
+  --border: #2c2c28;
+  --code-bkg: #1a1a18;
+}
+
+/* Light mode for users who prefer it */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bkg: #fffff8;
+    --text: #222;
+    --muted: #6b6b6b;
+    --accent: #1a4a6b;
+    --border: #d8d8d0;
+    --code-bkg: #f2f2ec;
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -254,7 +267,10 @@ hr {
 }
 
 /* ── Selection ──────────────────────────────────────── */
-::selection { background: #c4dff0; color: var(--text); }
+::selection { background: #2a4a62; color: #e8e4dc; }
+@media (prefers-color-scheme: light) {
+  ::selection { background: #c4dff0; color: #222; }
+}
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 560px) {
