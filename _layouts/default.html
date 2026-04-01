@@ -26,6 +26,8 @@
   <meta property="og:url" content="{{ site.url }}{{ page.url }}">
   {% endif %}
   <meta name="robots" content="index,follow">
+  <!-- Apply saved theme before paint to avoid flash -->
+  <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -46,6 +48,7 @@
       <a href="/about/">About</a>
       <a href="/wiki/">Wiki</a>
       <a href="/blog/">Blog</a>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
     </nav>
   </header>
 
@@ -63,6 +66,17 @@
     <p>Nahuel Yazbek &middot; <a href="https://github.com/nyazbek/nyazbek.github.io">Source</a></p>
   </footer>
 
+  <script>
+    (function() {
+      var btn = document.getElementById('theme-toggle');
+      btn.addEventListener('click', function() {
+        var current = document.documentElement.getAttribute('data-theme') || 'warm';
+        var next = current === 'dark' ? 'warm' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+      });
+    })();
+  </script>
   <script defer src="https://kit.fontawesome.com/695103c91f.js" crossorigin="anonymous"></script>
   {% if page.uses_mathjax %}
   <script defer src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
