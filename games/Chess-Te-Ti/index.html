@@ -1,0 +1,1421 @@
+?<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chess × Tic-Tac-Toe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Variables ─────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0c0e1a;
+      --surface:     #161929;
+      --surface2:    #1e2138;
+      --gold:        #c9a84c;
+      --gold2:       #e8c76d;
+      --gold3:       #a07820;
+      --board-light: #f0d9b5;
+      --board-dark:  #b58863;
+      --selected:    #acea4f;
+      --text:        #e8e0d0;
+      --text2:       #8a8aaa;
+      --border:      rgba(255,255,255,0.07);
+      --shadow:      rgba(0,0,0,0.5);
+      --sq: clamp(62px, calc((100vw - 48px) / 4), 100px);
+    }
+
+    @media (min-width: 620px) {
+      :root {
+        --sq: clamp(72px, min(calc((100vw - 320px) / 4), calc((100dvh - 360px) / 4)), 102px);
+      }
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 15% 15%, rgba(201,168,76,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 60% at 85% 80%, rgba(70,70,160,0.10) 0%, transparent 60%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Keyframe Animations ───────────────────────── */
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(-8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes boardEntrance {
+      from { opacity:0; transform:scale(0.93) translateY(10px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+    @keyframes pieceIn {
+      0%   { transform:scale(0) rotate(-20deg); opacity:0; }
+      65%  { transform:scale(1.18) rotate(4deg); opacity:1; }
+      100% { transform:scale(1) rotate(0deg); }
+    }
+    @keyframes dotPulse {
+      0%,100% { transform:scale(0.75); opacity:0.55; }
+      50%      { transform:scale(1.2);  opacity:1; }
+    }
+    @keyframes ringPulse {
+      0%,100% { opacity:0.5; transform:scale(0.92); }
+      50%      { opacity:1;   transform:scale(1.04); }
+    }
+    @keyframes selectedGlow {
+      0%,100% { box-shadow: inset 0 0 0 3px var(--selected), 0 0 14px rgba(172,234,79,0.35); }
+      50%      { box-shadow: inset 0 0 0 3px var(--selected), 0 0 28px rgba(172,234,79,0.70); }
+    }
+    @keyframes gradientFlow {
+      0%,100% { background-position:0% 50%; }
+      50%      { background-position:100% 50%; }
+    }
+    @keyframes activeIndicator {
+      0%,100% { box-shadow:0 0 0 2px var(--gold); }
+      50%      { box-shadow:0 0 0 2px var(--gold), 0 0 18px rgba(201,168,76,0.55); }
+    }
+    @keyframes winFlash {
+      0%,100% { filter:brightness(1); }
+      50%      { filter:brightness(1.45) saturate(1.6); }
+    }
+    @keyframes confettiFall {
+      0%   { transform:translateY(-30px) rotate(0deg) scale(1); opacity:1; }
+      80%  { opacity:1; }
+      100% { transform:translateY(105vh) rotate(800deg) scale(0.5); opacity:0; }
+    }
+    @keyframes overlayIn {
+      from { opacity:0; transform:scale(0.88) translateY(20px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+    @keyframes crownFloat {
+      0%,100% { transform:translateY(0) rotate(-5deg); }
+      50%      { transform:translateY(-14px) rotate(6deg); }
+    }
+    @keyframes toastIn {
+      from { opacity:0; transform:translateX(-50%) translateY(16px); }
+      to   { opacity:1; transform:translateX(-50%) translateY(0); }
+    }
+    @keyframes handIn {
+      from { opacity:0; transform:translateX(-16px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    @keyframes handInRight {
+      from { opacity:0; transform:translateX(16px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    @keyframes phaseDot {
+      0%,100% { transform:scale(1); }
+      50%      { transform:scale(1.4); }
+    }
+
+    /* ── App Shell ─────────────────────────────────── */
+    .app {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 16px 28px;
+      gap: 14px;
+      animation: fadeIn 0.5s ease both;
+    }
+
+    /* ── Header ────────────────────────────────────── */
+    header { text-align:center; padding:4px 0; }
+    header h1 {
+      font-family:'Cinzel',serif;
+      font-size: clamp(1.35rem, 5vw, 2.1rem);
+      font-weight:700;
+      background: linear-gradient(135deg, var(--gold2) 0%, var(--gold) 50%, var(--gold3) 100%);
+      background-size:200% 200%;
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text;
+      animation: gradientFlow 5s ease infinite;
+      letter-spacing:0.05em;
+    }
+    header h1 .times { opacity:0.65; }
+    .subtitle {
+      font-family:'Cinzel',serif;
+      font-size:0.68rem;
+      color:var(--text2);
+      letter-spacing:0.22em;
+      text-transform:uppercase;
+      margin-top:3px;
+    }
+
+    /* ── Status Bar ────────────────────────────────── */
+    .status-bar {
+      display:flex;
+      align-items:center;
+      width:100%;
+      max-width:480px;
+      background:var(--surface);
+      border-radius:16px;
+      padding:10px 14px;
+      border:1px solid var(--border);
+      box-shadow:0 4px 24px var(--shadow);
+      animation: fadeIn 0.5s 0.15s ease both;
+    }
+    .player-chip {
+      display:flex;
+      align-items:center;
+      gap:7px;
+      font-size:0.82rem;
+      font-weight:500;
+      padding:5px 10px;
+      border-radius:10px;
+      transition:all 0.35s ease;
+      opacity:0.4;
+      min-width:68px;
+      border:1px solid transparent;
+    }
+    .player-chip.active {
+      opacity:1;
+      border-color:rgba(201,168,76,0.3);
+      animation: activeIndicator 1.8s ease infinite;
+    }
+    .dot {
+      width:11px; height:11px;
+      border-radius:50%;
+      flex-shrink:0;
+      transition:box-shadow 0.3s;
+    }
+    .dot-W {
+      background:#f5f0e8;
+      border:1.5px solid #666;
+      box-shadow:0 0 6px rgba(245,240,232,0.5);
+    }
+    .dot-B {
+      background:#1a1412;
+      border:1.5px solid #666;
+    }
+    .status-center { flex:1; text-align:center; padding:0 8px; }
+    #status-text {
+      font-family:'Cinzel',serif;
+      font-size:0.92rem;
+      font-weight:600;
+      transition:opacity 0.2s;
+    }
+    #phase-text {
+      font-size:0.68rem;
+      color:var(--gold);
+      margin-top:2px;
+      letter-spacing:0.06em;
+    }
+
+    /* ── Game Area (Grid) ──────────────────────────── */
+    .game-area {
+      display:grid;
+      grid-template-areas:"white board black";
+      grid-template-columns: auto auto auto;
+      gap:14px;
+      align-items:start;
+      animation: boardEntrance 0.6s 0.25s ease both;
+    }
+
+    /* ── Hands ─────────────────────────────────────── */
+    .hand {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      background:var(--surface);
+      border-radius:14px;
+      padding:12px 8px;
+      border:1px solid var(--border);
+      box-shadow:0 4px 18px var(--shadow);
+      min-width:68px;
+      min-height:100px;
+      transition:border-color 0.3s, opacity 0.3s;
+    }
+    .hand-white {
+      grid-area:white;
+      animation: handIn 0.5s 0.35s ease both;
+    }
+    .hand-black {
+      grid-area:black;
+      animation: handInRight 0.5s 0.35s ease both;
+    }
+    .hand.active  { border-color:rgba(201,168,76,0.45); }
+    .hand.dimmed  { opacity:0.45; }
+
+    .hand-label {
+      font-family:'Cinzel',serif;
+      font-size:0.52rem;
+      color:var(--text2);
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      margin-bottom:4px;
+    }
+    .piece-hand {
+      width: calc(var(--sq) * 0.58);
+      height: calc(var(--sq) * 0.58);
+      cursor:pointer;
+      border-radius:8px;
+      padding:3px;
+      transition:transform 0.15s ease, background 0.15s;
+      user-select:none;
+      position:relative;
+    }
+    .piece-hand img {
+      width:100%; height:100%;
+      object-fit:contain;
+      pointer-events:none;
+      display:block;
+    }
+    .piece-hand:hover {
+      transform:scale(1.12);
+      background:rgba(255,255,255,0.08);
+    }
+    .piece-hand.sel {
+      background:rgba(172,234,79,0.18);
+      box-shadow:0 0 14px rgba(172,234,79,0.5);
+      transform:scale(1.14);
+    }
+
+    /* ── Board ─────────────────────────────────────── */
+    #board {
+      grid-area:board;
+      display:grid;
+      grid-template-columns:repeat(4, var(--sq));
+      grid-template-rows:repeat(4, var(--sq));
+      border-radius:5px;
+      overflow:hidden;
+      box-shadow:
+        0 0 0 3px #7a5c38,
+        0 0 0 6px #4e3620,
+        0 10px 50px rgba(0,0,0,0.7),
+        0 0 80px rgba(201,168,76,0.08);
+    }
+    #board.won { animation: winFlash 0.45s ease 4; }
+
+    /* ── Squares ───────────────────────────────────── */
+    .sq {
+      width:var(--sq); height:var(--sq);
+      display:flex; justify-content:center; align-items:center;
+      cursor:pointer;
+      position:relative;
+      transition:filter 0.12s;
+    }
+    .sq:hover { filter:brightness(1.09); }
+    .sq-l { background:var(--board-light); }
+    .sq-d { background:linear-gradient(145deg, #cc9e72, #a57048); }
+
+    /* coord hint */
+    .sq::after { content:''; display:block; }
+    .sq[data-coord]::before {
+      content:attr(data-coord);
+      position:absolute;
+      font-size:9px; opacity:0.32;
+      font-family:'Inter',sans-serif;
+      pointer-events:none;
+    }
+    .sq-l::before { color:#8a6040; bottom:2px; right:3px; }
+    .sq-d::before { color:#d4a878; bottom:2px; right:3px; }
+
+    /* valid move indicators */
+    .sq.vm::after {
+      content:'';
+      position:absolute;
+      width:28%; height:28%;
+      border-radius:50%;
+      background:rgba(0,0,0,0.22);
+      pointer-events:none;
+      animation: dotPulse 1.3s ease infinite;
+    }
+    .sq.vm.capture::after {
+      width:84%; height:84%;
+      background:transparent;
+      border:3px solid rgba(0,0,0,0.28);
+      animation: ringPulse 1.3s ease infinite;
+    }
+
+    /* selected square */
+    .sq.sel-sq {
+      background:rgba(172,234,79,0.42) !important;
+      animation: selectedGlow 1.6s ease infinite;
+    }
+
+    /* piece on board */
+    .piece-on-board {
+      width:  calc(var(--sq) * 0.74);
+      height: calc(var(--sq) * 0.74);
+      pointer-events:none;
+      user-select:none;
+      animation: pieceIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .piece-on-board img {
+      width:100%; height:100%;
+      object-fit:contain;
+      display:block;
+    }
+    .sq.sel-sq .piece-on-board { transform:scale(1.06); }
+
+    /* ── Phase / Round Bar ─────────────────────────── */
+    .phase-bar {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:var(--surface);
+      border-radius:20px;
+      padding:8px 18px;
+      border:1px solid var(--border);
+      font-size:0.72rem;
+      animation: fadeIn 0.5s 0.4s ease both;
+    }
+    .ph-dot {
+      width:8px; height:8px;
+      border-radius:50%;
+      background:var(--text2);
+      transition:background 0.4s, box-shadow 0.4s;
+    }
+    .ph-dot.on {
+      background:var(--gold);
+      box-shadow:0 0 8px var(--gold);
+      animation: phaseDot 1.5s ease infinite;
+    }
+    .ph-label {
+      font-family:'Cinzel',serif;
+      font-size:0.68rem;
+      letter-spacing:0.05em;
+      color:var(--text2);
+      transition:color 0.4s;
+    }
+    .ph-label.on { color:var(--gold2); }
+    .ph-sep { color:rgba(255,255,255,0.15); }
+    #turn-label { margin-left:auto; color:var(--text2); font-size:0.7rem; }
+
+    /* ── Controls ──────────────────────────────────── */
+    .controls {
+      display:flex;
+      gap:12px;
+      animation: fadeIn 0.5s 0.5s ease both;
+    }
+    .btn {
+      padding:10px 22px;
+      border-radius:10px;
+      border:none;
+      font-family:'Cinzel',serif;
+      font-size:0.78rem;
+      font-weight:600;
+      cursor:pointer;
+      letter-spacing:0.05em;
+      transition:all 0.2s ease;
+    }
+    .btn:hover  { transform:translateY(-2px); }
+    .btn:active { transform:translateY(0px); }
+    .btn-gold {
+      background:linear-gradient(135deg, var(--gold2) 0%, var(--gold) 60%, var(--gold3) 100%);
+      color:#0d0f1a;
+      box-shadow:0 4px 18px rgba(201,168,76,0.35);
+    }
+    .btn-gold:hover { box-shadow:0 6px 28px rgba(201,168,76,0.55); }
+    .btn-ghost {
+      background:var(--surface2);
+      color:var(--text);
+      border:1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color:rgba(201,168,76,0.35); }
+
+    /* ── Win Overlay ───────────────────────────────── */
+    #win-overlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.78);
+      backdrop-filter:blur(7px);
+      display:flex; align-items:center; justify-content:center;
+      z-index:100;
+      animation: fadeIn 0.4s ease both;
+    }
+    #win-overlay.hidden { display:none; }
+    .win-card {
+      background:linear-gradient(145deg, #1d1f35, #14162a);
+      border:1px solid rgba(201,168,76,0.55);
+      border-radius:24px;
+      padding:40px 48px;
+      text-align:center;
+      max-width:320px;
+      width:90%;
+      box-shadow:0 24px 70px rgba(0,0,0,0.7), 0 0 50px rgba(201,168,76,0.12);
+      animation: overlayIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .win-crown {
+      font-size:72px;
+      display:block;
+      margin-bottom:12px;
+      animation: crownFloat 2.2s ease infinite;
+    }
+    #win-title {
+      font-family:'Cinzel',serif;
+      font-size:2rem;
+      font-weight:700;
+      background:linear-gradient(135deg, var(--gold2), var(--gold));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text;
+      margin-bottom:6px;
+    }
+    #win-sub {
+      color:var(--text2);
+      font-size:0.88rem;
+      margin-bottom:26px;
+    }
+    #play-again-btn {
+      background:linear-gradient(135deg, var(--gold2), var(--gold3));
+      color:#0d0f1a;
+      border:none;
+      border-radius:12px;
+      padding:12px 38px;
+      font-family:'Cinzel',serif;
+      font-size:0.95rem;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 4px 22px rgba(201,168,76,0.45);
+      transition:all 0.2s;
+    }
+    #play-again-btn:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(201,168,76,0.6); }
+
+    /* ── How to Play Modal ─────────────────────────── */
+    #modal {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.78);
+      backdrop-filter:blur(7px);
+      display:flex; align-items:center; justify-content:center;
+      z-index:90; padding:16px;
+      animation: fadeIn 0.3s ease both;
+    }
+    #modal.hidden { display:none; }
+    .modal-box {
+      background:linear-gradient(145deg, #1d2038, #141628);
+      border:1px solid rgba(201,168,76,0.35);
+      border-radius:20px;
+      padding:28px 24px;
+      max-width:420px; width:100%;
+      max-height:85dvh;
+      overflow-y:auto;
+      box-shadow:0 20px 60px var(--shadow);
+      animation: overlayIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .modal-box h2 {
+      font-family:'Cinzel',serif;
+      font-size:1.35rem;
+      color:var(--gold2);
+      text-align:center;
+      margin-bottom:20px;
+    }
+    .rule-block { margin-bottom:16px; }
+    .rule-block h3 {
+      font-family:'Cinzel',serif;
+      font-size:0.8rem;
+      color:var(--gold);
+      margin-bottom:6px;
+      letter-spacing:0.05em;
+    }
+    .rule-block p, .rule-block li {
+      font-size:0.83rem;
+      color:var(--text2);
+      line-height:1.65;
+    }
+    .rule-block ul { padding-left:16px; }
+    .piece-list {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:8px;
+    }
+    .piece-row {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:var(--surface2);
+      border-radius:8px;
+      padding:7px 10px;
+    }
+    .piece-row img { width:28px; height:28px; object-fit:contain; flex-shrink:0; }
+    .piece-row span { font-size:0.8rem; color:var(--text2); }
+    .piece-row strong { color:var(--text); }
+    #close-modal {
+      display:block; width:100%;
+      margin-top:20px;
+      background:linear-gradient(135deg, var(--gold2), var(--gold3));
+      color:#0d0f1a;
+      border:none; border-radius:10px;
+      padding:10px;
+      font-family:'Cinzel',serif;
+      font-size:0.85rem; font-weight:700;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    #close-modal:hover { opacity:0.9; transform:translateY(-1px); }
+
+    /* ── Toast ─────────────────────────────────────── */
+    #toast {
+      position:fixed;
+      bottom:76px; left:50%;
+      transform:translateX(-50%);
+      background:var(--surface2);
+      color:var(--text);
+      padding:10px 22px;
+      border-radius:10px;
+      font-size:0.83rem; font-weight:500;
+      border:1px solid var(--border);
+      box-shadow:0 4px 22px var(--shadow);
+      z-index:80;
+      white-space:nowrap;
+      animation: toastIn 0.3s ease both;
+    }
+    #toast.hidden { display:none; }
+    #toast.err { border-color:rgba(255,80,80,0.5); color:#ff9090; }
+
+    /* ── Confetti ──────────────────────────────────── */
+    #confetti { position:fixed; inset:0; pointer-events:none; z-index:99; overflow:hidden; }
+    .cbit {
+      position:absolute;
+      top:-20px;
+      border-radius:2px;
+      animation: confettiFall linear both;
+    }
+
+    /* ── Responsive: Mobile ────────────────────────── */
+    @media (max-width: 619px) {
+      /* Switch game-area to flex so board (order:-1) goes first,
+         then both hands wrap side-by-side on the next row */
+      .game-area {
+        display:flex;
+        flex-wrap:wrap;
+        justify-content:center;
+        align-items:flex-start;
+        gap:12px;
+      }
+      #board {
+        order:-1;        /* Board floats to first row */
+        flex-shrink:0;
+      }
+      .hand {
+        /* Each hand ≈ half the board width */
+        flex:0 0 calc(2 * var(--sq) - 10px);
+        flex-direction:row;
+        flex-wrap:wrap;
+        justify-content:center;
+        min-height:unset;
+        padding:10px;
+      }
+      .hand-label { width:100%; text-align:center; }
+      .piece-hand { width:calc(var(--sq)*0.52); height:calc(var(--sq)*0.52); }
+      .controls { gap:8px; }
+      .btn { font-size:0.72rem; padding:9px 16px; }
+      .phase-bar { padding:7px 14px; gap:7px; }
+    }
+
+    @media (max-width: 360px) {
+      header h1 { font-size:1.18rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Confetti -->
+<div id="confetti"></div>
+
+<!-- Win Overlay -->
+<div id="win-overlay" class="hidden">
+  <div class="win-card">
+    <span class="win-crown">♛</span>
+    <h2 id="win-title">White Wins!</h2>
+    <p id="win-sub">Four in a row — brilliant!</p>
+    <button id="play-again-btn">Play Again</button>
+  </div>
+</div>
+
+<!-- How to Play Modal -->
+<div id="modal" class="hidden">
+  <div class="modal-box">
+    <h2>♟ How to Play</h2>
+
+    <div class="rule-block">
+      <h3>Objective</h3>
+      <p>Line up <strong>4 of your pieces in a row</strong> — horizontally, vertically, or diagonally on the 4×4 board.</p>
+    </div>
+
+    <div class="rule-block">
+      <h3>Phases</h3>
+      <ul>
+        <li><strong>Rounds 1–3:</strong> Place any piece from your hand onto an empty square.</li>
+        <li><strong>Round 4+:</strong> Place pieces <em>or</em> move pieces already on the board.</li>
+      </ul>
+    </div>
+
+    <div class="rule-block">
+      <h3>Your Pieces</h3>
+      <div class="piece-list">
+        <div class="piece-row">
+          <img src="../pieces/wP.svg" alt="Pawn">
+          <span><strong>Pawn</strong> — 1 step forward, captures diagonally. Bounces at edges!</span>
+        </div>
+        <div class="piece-row">
+          <img src="../pieces/wR.svg" alt="Rook">
+          <span><strong>Rook</strong> — any distance in a straight line</span>
+        </div>
+        <div class="piece-row">
+          <img src="../pieces/wN.svg" alt="Knight">
+          <span><strong>Knight</strong> — L-shape jump, leaps over pieces</span>
+        </div>
+        <div class="piece-row">
+          <img src="../pieces/wB.svg" alt="Bishop">
+          <span><strong>Bishop</strong> — any distance diagonally</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule-block">
+      <h3>Captures</h3>
+      <p>Capturing an enemy piece sends it back to their hand — they can place it again!</p>
+    </div>
+
+    <button id="close-modal">Got it!</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden"></div>
+
+<!-- App -->
+<a href="../index.html" id="back-home" style="position:fixed;top:12px;left:14px;z-index:200;font-family:Cinzel,serif;font-size:.65rem;letter-spacing:.1em;color:#8a8aaa;background:rgba(22,25,41,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:5px 12px;text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s,border-color .2s;backdrop-filter:blur(8px);" onmouseover="this.style.color='#c9a84c';this.style.borderColor='rgba(201,168,76,.35)'" onmouseout="this.style.color='#8a8aaa';this.style.borderColor='rgba(255,255,255,.08)'">&#8592; All Games</a><div class="app">
+  <header>
+    <h1>Chess <span class="times">×</span> Tic-Tac-Toe</h1>
+    <p class="subtitle">Strategic 4-in-a-Row</p>
+  </header>
+
+  <div class="status-bar">
+    <div class="player-chip active" id="chip-W">
+      <span class="dot dot-W"></span>
+      <span>White</span>
+    </div>
+    <div class="status-center">
+      <div id="status-text">White's Turn</div>
+      <div id="phase-text">Round 1 · Placement</div>
+    </div>
+    <div class="player-chip" id="chip-B">
+      <span>Black</span>
+      <span class="dot dot-B"></span>
+    </div>
+  </div>
+
+  <div class="game-area" id="game-area">
+    <div class="hand hand-white" id="white-hand"></div>
+    <div id="board"></div>
+    <div class="hand hand-black" id="black-hand"></div>
+  </div>
+
+  <div class="phase-bar">
+    <span class="ph-dot on"  id="pd1"></span>
+    <span class="ph-label on" id="pl1">Placement</span>
+    <span class="ph-sep">→</span>
+    <span class="ph-dot"  id="pd2"></span>
+    <span class="ph-label" id="pl2">Move &amp; Place</span>
+    <span id="turn-label">Turn 1</span>
+  </div>
+
+  <div class="mode-bar" id="mode-bar" style="display:flex;align-items:center;gap:4px;background:rgba(22,25,41,0.95);border-radius:12px;padding:5px 6px;border:1px solid rgba(255,255,255,.07);box-shadow:0 2px 12px rgba(0,0,0,.5);flex-wrap:wrap;justify-content:center;animation:fadeIn .5s .12s ease both;">
+    <button class="mode-btn mode-active" id="mode-pvp" style="padding:5px 13px;border-radius:8px;border:1px solid transparent;font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;cursor:pointer;color:#c9a84c;background:rgba(30,33,56,.9);border-color:rgba(201,168,76,.35);transition:all .2s;letter-spacing:.03em;">2 Players</button>
+    <span style="color:rgba(255,255,255,.12);font-size:1rem;padding:0 2px;">|</span>
+    <button class="mode-btn" id="mode-bot" style="padding:5px 13px;border-radius:8px;border:1px solid transparent;font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;cursor:pointer;color:#8a8aaa;background:transparent;transition:all .2s;letter-spacing:.03em;">vs Bot</button>
+    <div id="diff-group" style="display:flex;gap:3px;opacity:.25;pointer-events:none;transition:opacity .25s;">
+      <span style="color:rgba(255,255,255,.12);padding:0 2px;">·</span>
+      <button class="mode-btn" id="diff-easy"   style="padding:5px 13px;border-radius:8px;border:1px solid transparent;font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;cursor:pointer;color:#8a8aaa;background:transparent;transition:all .2s;">Easy</button>
+      <button class="mode-btn" id="diff-medium" style="padding:5px 13px;border-radius:8px;border:1px solid transparent;font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;cursor:pointer;color:#8a8aaa;background:transparent;transition:all .2s;">Medium</button>
+      <button class="mode-btn" id="diff-hard"   style="padding:5px 13px;border-radius:8px;border:1px solid transparent;font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;cursor:pointer;color:#8a8aaa;background:transparent;transition:all .2s;">Hard</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-ghost" id="info-btn">How to Play</button>
+    <button class="btn btn-gold"  id="new-btn">New Game</button>
+  </div>
+</div>
+
+<script>
+// ── Piece Images ──────────────────────────────────────
+const IMG = {
+  P: { W:'../pieces/wP.svg', B:'../pieces/bP.svg' },
+  R: { W:'../pieces/wR.svg', B:'../pieces/bR.svg' },
+  N: { W:'../pieces/wN.svg', B:'../pieces/bN.svg' },
+  B: { W:'../pieces/wB.svg', B:'../pieces/bB.svg' },
+};
+const NAMES = { P:'Pawn', R:'Rook', N:'Knight', B:'Bishop' };
+
+// ── Game State ────────────────────────────────────────
+let board = Array(4).fill(null).map(() => Array(4).fill(null));
+let currentPlayer = 'W';
+let gameState     = 'playing';
+let turnCount     = 1;
+let hands         = { W:['P','R','N','B'], B:['P','R','N','B'] };
+let selected      = null;
+let validMoves    = [];
+let toastTimer    = null;
+let botMode       = null;   // null | 'easy' | 'medium' | 'hard'
+let isBotThinking = false;
+
+// ── DOM ───────────────────────────────────────────────
+const boardEl    = document.getElementById('board');
+const whiteEl    = document.getElementById('white-hand');
+const blackEl    = document.getElementById('black-hand');
+const statusEl   = document.getElementById('status-text');
+const phaseEl    = document.getElementById('phase-text');
+const turnLbl    = document.getElementById('turn-label');
+const chipW      = document.getElementById('chip-W');
+const chipB      = document.getElementById('chip-B');
+const pd1        = document.getElementById('pd1');
+const pd2        = document.getElementById('pd2');
+const pl1        = document.getElementById('pl1');
+const pl2        = document.getElementById('pl2');
+const winOverlay = document.getElementById('win-overlay');
+const winTitle   = document.getElementById('win-title');
+const winSub     = document.getElementById('win-sub');
+const modal      = document.getElementById('modal');
+const toastEl    = document.getElementById('toast');
+const confettiEl = document.getElementById('confetti');
+
+// ── Init ──────────────────────────────────────────────
+function init() {
+  boardEl.innerHTML = '';
+  const coords = ['a','b','c','d'];
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const sq = document.createElement('div');
+      sq.className = `sq ${(r+c)%2===0 ? 'sq-l' : 'sq-d'}`;
+      sq.dataset.r = r;
+      sq.dataset.c = c;
+      // Corner coord hints
+      if (c === 3 && r < 4)      sq.dataset.coord = (4-r).toString();
+      else if (r === 3 && c < 3) sq.dataset.coord = coords[c];
+      sq.addEventListener('click', () => handleSquare(r, c));
+      boardEl.appendChild(sq);
+    }
+  }
+  render();
+}
+
+// ── Render ────────────────────────────────────────────
+function render() {
+  renderBoard();
+  renderHand('W', whiteEl);
+  renderHand('B', blackEl);
+  renderStatus();
+}
+
+function renderBoard() {
+  boardEl.querySelectorAll('.sq').forEach(sq => {
+    const r = +sq.dataset.r, c = +sq.dataset.c;
+    const piece = board[r][c];
+
+    // Rebuild class and clear stale children
+    const isLight = (r+c)%2 === 0;
+    sq.className = `sq ${isLight ? 'sq-l' : 'sq-d'}`;
+    sq.innerHTML = '';
+
+    // Piece image
+    if (piece) {
+      const wrap = document.createElement('div');
+      wrap.className = 'piece-on-board';
+      const img = document.createElement('img');
+      img.src = IMG[piece.type][piece.color];
+      img.alt = `${piece.color==='W'?'White':'Black'} ${NAMES[piece.type]}`;
+      wrap.appendChild(img);
+      sq.appendChild(wrap);
+    }
+
+    // Highlights
+    if (selected?.source==='board' && selected.r===r && selected.c===c) {
+      sq.classList.add('sel-sq');
+    }
+    if (validMoves.some(m => m.r===r && m.c===c)) {
+      sq.classList.add('vm');
+      if (piece) sq.classList.add('capture');
+    }
+  });
+}
+
+function renderHand(color, el) {
+  el.innerHTML = `<div class="hand-label">${color==='W'?'White':'Black'}</div>`;
+  const isActive = currentPlayer===color && gameState==='playing';
+  el.className = `hand ${color==='W'?'hand-white':'hand-black'} ${isActive?'active':'dimmed'}`;
+
+  hands[color].forEach(type => {
+    const div = document.createElement('div');
+    div.className = 'piece-hand';
+    const isSel = selected?.source==='hand' && selected.color===color && selected.type===type;
+    if (isSel) div.classList.add('sel');
+    div.title = NAMES[type];
+
+    const img = document.createElement('img');
+    img.src = IMG[type][color];
+    img.alt = NAMES[type];
+    div.appendChild(img);
+    div.addEventListener('click', () => handleHandClick(color, type));
+    el.appendChild(div);
+  });
+}
+
+function renderStatus() {
+  const round  = Math.ceil(turnCount / 2);
+  const phase2 = turnCount > 6;
+
+  if (gameState === 'won') {
+    // winner is stored in winOverlay title — just show generic Game Over here
+    statusEl.textContent = winTitle.textContent || 'Game Over';
+    phaseEl.textContent  = 'Game Over';
+  } else {
+    statusEl.textContent = `${currentPlayer==='W'?'White':'Black'}'s Turn`;
+    phaseEl.textContent  = `Round ${round} · ${phase2?'Place or Move':'Placement Only'}`;
+  }
+
+  turnLbl.textContent = `Turn ${turnCount}`;
+
+  chipW.classList.toggle('active', currentPlayer==='W' && gameState==='playing');
+  chipB.classList.toggle('active', currentPlayer==='B' && gameState==='playing');
+
+  pd1.classList.toggle('on', !phase2);
+  pl1.classList.toggle('on', !phase2);
+  pd2.classList.toggle('on',  phase2);
+  pl2.classList.toggle('on',  phase2);
+}
+
+// ── Interaction ───────────────────────────────────────
+function handleHandClick(color, type) {
+  if (gameState !== 'playing') return;
+  if (currentPlayer !== color) { toast("It's not your turn!", 'err'); return; }
+  if (selected?.source==='hand' && selected.color===color && selected.type===type) {
+    selected = null; validMoves = [];
+  } else {
+    selected = { source:'hand', color, type };
+    validMoves = [];
+  }
+  render();
+}
+
+function handleSquare(r, c) {
+  if (gameState !== 'playing') return;
+  const piece = board[r][c];
+
+  // ① Place from hand
+  if (selected?.source === 'hand') {
+    if (piece) { toast('Square is occupied!', 'err'); return; }
+    const np = { type:selected.type, color:selected.color };
+    if (np.type === 'P') {
+      np.dir = np.color==='W' ? -1 : 1;
+      if ((np.color==='W' && r===0) || (np.color==='B' && r===3)) np.dir *= -1;
+    }
+    board[r][c] = np;
+    hands[selected.color].splice(hands[selected.color].indexOf(selected.type), 1);
+    endTurn(); return;
+  }
+
+  // ② Select own board piece
+  if (piece && piece.color === currentPlayer) {
+    if (turnCount <= 6) { toast("Can't move until Round 4!", 'err'); return; }
+    if (selected?.source==='board' && selected.r===r && selected.c===c) {
+      selected = null; validMoves = []; render(); return;
+    }
+    selected  = { source:'board', color:piece.color, type:piece.type, r, c };
+    validMoves = getMoves(r, c, piece);
+    if (!validMoves.length) toast('No valid moves!', 'err');
+    render(); return;
+  }
+
+  // ③ Execute move
+  if (selected?.source === 'board') {
+    if (validMoves.some(m => m.r===r && m.c===c)) {
+      if (piece) hands[piece.color].push(piece.type);
+      board[r][c] = board[selected.r][selected.c];
+      board[selected.r][selected.c] = null;
+      if (board[r][c].type==='P' && (r===0||r===3)) board[r][c].dir *= -1;
+      endTurn();
+    } else {
+      selected = null; validMoves = []; render();
+    }
+  }
+}
+
+function endTurn() {
+  selected   = null;
+  validMoves = [];
+  const winColor = checkWin();
+  if (winColor) {
+    gameState = 'won';
+    render();
+    showWin(winColor);
+  } else {
+    currentPlayer = currentPlayer==='W' ? 'B' : 'W';
+    turnCount++;
+    render();
+    // trigger bot if it's Black's turn
+    if (botMode && currentPlayer === 'B' && gameState === 'playing') {
+      scheduleBotMove();
+    }
+  }
+}
+
+// ── Movement ──────────────────────────────────────────
+function getMoves(r, c, piece) {
+  const moves = [];
+  const scan = (dr, dc) => {
+    let nr=r+dr, nc=c+dc;
+    while (nr>=0&&nr<4&&nc>=0&&nc<4) {
+      if (!board[nr][nc]) { moves.push({r:nr,c:nc}); }
+      else { if (board[nr][nc].color!==piece.color) moves.push({r:nr,c:nc}); break; }
+      nr+=dr; nc+=dc;
+    }
+  };
+  if (piece.type==='R') { scan(-1,0);scan(1,0);scan(0,-1);scan(0,1); }
+  else if (piece.type==='B') { scan(-1,-1);scan(-1,1);scan(1,-1);scan(1,1); }
+  else if (piece.type==='N') {
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc]) => {
+      const nr=r+dr, nc=c+dc;
+      if (nr>=0&&nr<4&&nc>=0&&nc<4&&(!board[nr][nc]||board[nr][nc].color!==piece.color))
+        moves.push({r:nr,c:nc});
+    });
+  }
+  else if (piece.type==='P') {
+    const d = piece.dir;
+    if (r+d>=0&&r+d<4&&!board[r+d][c]) moves.push({r:r+d,c});
+    if (r+d>=0&&r+d<4) {
+      if (c>0   && board[r+d][c-1]?.color!==piece.color && board[r+d][c-1]) moves.push({r:r+d,c:c-1});
+      if (c<3   && board[r+d][c+1]?.color!==piece.color && board[r+d][c+1]) moves.push({r:r+d,c:c+1});
+    }
+  }
+  return moves;
+}
+
+// ── Win Condition ─────────────────────────────────────
+// Returns the winning color ('W' or 'B'), or null if no winner yet.
+function checkWin() {
+  for (let i=0;i<4;i++) {
+    const c = lineColor(0,i,1,0) || lineColor(i,0,0,1);
+    if (c) return c;
+  }
+  return lineColor(0,0,1,1) || lineColor(0,3,1,-1) || null;
+}
+function lineColor(sr,sc,dr,dc) {
+  let color=null, r=sr, c=sc;
+  for (let i=0;i<4;i++) {
+    if (!board[r][c]) return null;
+    if (!color) color=board[r][c].color;
+    else if (board[r][c].color!==color) return null;
+    r+=dr; c+=dc;
+  }
+  return color; // 'W' or 'B'
+}
+
+// ── Win Celebration ───────────────────────────────────
+function showWin(winColor) {
+  const winner = winColor==='W' ? 'White' : 'Black';
+  winTitle.textContent = `${winner} Wins!`;
+  winSub.textContent   = winColor==='W' ? 'White captures the board! ♙' : 'Black dominates! ♟';
+  winOverlay.classList.remove('hidden');
+  boardEl.classList.add('won');
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#c9a84c','#e8c76d','#f0d9b5','#b58863','#acea4f','#88ccff','#ff8888','#ffffff','#ffd700'];
+  confettiEl.innerHTML = '';
+  for (let i=0; i<100; i++) {
+    const el = document.createElement('div');
+    el.className = 'cbit';
+    el.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colors[i%colors.length]};
+      width:${6+Math.random()*8}px;
+      height:${6+Math.random()*8}px;
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      animation-duration:${2.2+Math.random()*2.8}s;
+      animation-delay:${Math.random()*1.8}s;
+    `;
+    confettiEl.appendChild(el);
+  }
+  setTimeout(() => { confettiEl.innerHTML=''; }, 6500);
+}
+
+// ── Toast ─────────────────────────────────────────────
+function toast(msg, type='') {
+  toastEl.textContent = msg;
+  toastEl.className   = type || '';
+  toastEl.style.animation = 'none';
+  void toastEl.offsetHeight;
+  toastEl.style.animation = 'toastIn 0.3s ease both';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toastEl.className='hidden'; }, 2400);
+}
+
+// ── New Game ──────────────────────────────────────────
+function resetGame() {
+  board         = Array(4).fill(null).map(() => Array(4).fill(null));
+  currentPlayer = 'W';
+  gameState     = 'playing';
+  turnCount     = 1;
+  hands         = { W:['P','R','N','B'], B:['P','R','N','B'] };
+  selected      = null;
+  validMoves    = [];
+  winOverlay.classList.add('hidden');
+  boardEl.classList.remove('won');
+  confettiEl.innerHTML = '';
+  init();
+}
+
+// ──────────────────────────────────────────────────────────
+//  BOT ENGINE
+// ──────────────────────────────────────────────────────────
+
+// Piece values for evaluation
+const PIECE_VAL = { P:1, N:3, B:3.5, R:5 };
+// Position weights for 4×4 board (center = more valuable)
+const POS_W = [[1,2,2,1],[2,4,4,2],[2,4,4,2],[1,2,2,1]];
+
+function scheduleBotMove() {
+  if (gameState !== 'playing' || currentPlayer !== 'B') return;
+  isBotThinking = true;
+  boardEl.style.pointerEvents = 'none';
+  boardEl.style.opacity = '0.65';
+  const delay = botMode === 'hard' ? 120 : 500;
+  setTimeout(() => {
+    if (gameState !== 'playing') { isBotThinking = false; boardEl.style.pointerEvents=''; boardEl.style.opacity=''; return; }
+    executeBotMove();
+    isBotThinking = false;
+    boardEl.style.pointerEvents = '';
+    boardEl.style.opacity = '';
+  }, delay);
+}
+
+function executeBotMove() {
+  const state = cloneState();
+  const moves = getAllLegalMoves(state);
+  if (!moves.length) return;
+
+  // ① Immediate win — take it
+  for (const mv of moves) {
+    const child = applyMoveToState(state, mv);
+    if (checkWinState(child) === 'B') { applyBotMove(mv); return; }
+  }
+
+  // ② Immediate block — find White's winning moves and try to prevent them
+  const whiteMoves = getAllLegalMovesForColor(state, 'W');
+  const winningWhite = whiteMoves.filter(wm => {
+    const child = applyMoveToState(state, wm);
+    return checkWinState(child) === 'W';
+  });
+  if (winningWhite.length > 0) {
+    // Try to find a bot move that removes all White winning options
+    const blocking = moves.find(bm => {
+      const afterBot = applyMoveToState(state, bm);
+      const wm2 = getAllLegalMovesForColor(afterBot, 'W');
+      return !wm2.some(wm => checkWinState(applyMoveToState(afterBot, wm)) === 'W');
+    });
+    if (blocking) { applyBotMove(blocking); return; }
+    // Can't block all — at least occupy one of the winning squares
+    const partial = moves.find(bm =>
+      winningWhite.some(wm => bm.type==='place' && bm.toR===wm.toR && bm.toC===wm.toC)
+    );
+    if (partial) { applyBotMove(partial); return; }
+  }
+
+  let chosen;
+  if (botMode === 'easy')   chosen = moves[Math.floor(Math.random()*moves.length)];
+  else if (botMode === 'medium') chosen = heuristicChessMove(state, moves);
+  else                           chosen = minimaxChessBest(state, moves, 4);
+  applyBotMove(chosen);
+}
+
+// ─── State cloning ────────────────────────────────────────
+function cloneState() {
+  return {
+    board: board.map(row => row.map(p => p ? {...p} : null)),
+    hands: { W:[...hands.W], B:[...hands.B] },
+    turnCount
+  };
+}
+function cloneStateObj(s) {
+  return {
+    board: s.board.map(row => row.map(p => p ? {...p} : null)),
+    hands: { W:[...s.hands.W], B:[...s.hands.B] },
+    turnCount: s.turnCount
+  };
+}
+
+// ─── Move generation ─────────────────────────────────────
+// Move format: { type:'place'|'move', pieceType, toR, toC, fromR?, fromC? }
+function getAllLegalMoves(state) {
+  const moves = [];
+  const color = 'B'; // bot is always Black
+  const isPhase2 = state.turnCount > 6;
+
+  // Place from hand
+  for (const pieceType of new Set(state.hands.B)) {
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        if (!state.board[r][c]) {
+          moves.push({ type:'place', pieceType, toR:r, toC:c });
+        }
+      }
+    }
+  }
+
+  // Move board pieces (only in phase 2)
+  if (isPhase2) {
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const p = state.board[r][c];
+        if (p && p.color === color) {
+          const targets = getBotMovesForPiece(state.board, r, c, p);
+          for (const {r:tr, c:tc} of targets) {
+            moves.push({ type:'move', pieceType:p.type, fromR:r, fromC:c, toR:tr, toC:tc });
+          }
+        }
+      }
+    }
+  }
+  return moves;
+}
+
+function getBotMovesForPiece(b, r, c, piece) {
+  const moves = [];
+  const color = piece.color;
+  const scan = (dr, dc) => {
+    let nr=r+dr, nc=c+dc;
+    while (nr>=0&&nr<4&&nc>=0&&nc<4) {
+      if (!b[nr][nc]) moves.push({r:nr,c:nc});
+      else { if (b[nr][nc].color!==color) moves.push({r:nr,c:nc}); break; }
+      nr+=dr; nc+=dc;
+    }
+  };
+  if (piece.type==='R') { scan(-1,0);scan(1,0);scan(0,-1);scan(0,1); }
+  else if (piece.type==='B') { scan(-1,-1);scan(-1,1);scan(1,-1);scan(1,1); }
+  else if (piece.type==='N') {
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+      const nr=r+dr,nc=c+dc;
+      if (nr>=0&&nr<4&&nc>=0&&nc<4&&(!b[nr][nc]||b[nr][nc].color!==color)) moves.push({r:nr,c:nc});
+    });
+  } else if (piece.type==='P') {
+    const d=piece.dir;
+    if (r+d>=0&&r+d<4&&!b[r+d][c]) moves.push({r:r+d,c});
+    if (r+d>=0&&r+d<4) {
+      if (c>0&&b[r+d][c-1]?.color!==color&&b[r+d][c-1]) moves.push({r:r+d,c:c-1});
+      if (c<3&&b[r+d][c+1]?.color!==color&&b[r+d][c+1]) moves.push({r:r+d,c:c+1});
+    }
+  }
+  return moves;
+}
+
+// ─── Apply move to state object (for minimax) ─────────────
+function applyMoveToState(s, mv) {
+  const n = cloneStateObj(s);
+  const color = mv._forColor || 'B';
+  if (mv.type === 'place') {
+    const p = { type:mv.pieceType, color };
+    if (p.type==='P') {
+      // White pawn goes up (dir=-1), bounces at row 3; Black goes down (dir=1), bounces at row 0
+      p.dir = color==='W' ? -1 : 1;
+      if ((color==='W'&&mv.toR===3)||(color==='B'&&mv.toR===0)) p.dir*=-1;
+    }
+    n.board[mv.toR][mv.toC] = p;
+    const idx = n.hands[color].indexOf(mv.pieceType);
+    if (idx>=0) n.hands[color].splice(idx,1);
+  } else {
+    const captured = n.board[mv.toR][mv.toC];
+    if (captured) n.hands[color].push(captured.type);
+    n.board[mv.toR][mv.toC] = {...n.board[mv.fromR][mv.fromC]};
+    n.board[mv.fromR][mv.fromC] = null;
+    if (n.board[mv.toR][mv.toC].type==='P'&&(mv.toR===0||mv.toR===3)) n.board[mv.toR][mv.toC].dir*=-1;
+  }
+  n.turnCount++;
+  return n;
+}
+
+// Apply bot move to the LIVE game state and call endTurn
+function applyBotMove(mv) {
+  if (mv.type === 'place') {
+    const p = { type:mv.pieceType, color:'B' };
+    if (p.type==='P') { p.dir=1; if (mv.toR===0) p.dir=-1; }
+    board[mv.toR][mv.toC] = p;
+    const idx = hands.B.indexOf(mv.pieceType);
+    if (idx>=0) hands.B.splice(idx,1);
+  } else {
+    const captured = board[mv.toR][mv.toC];
+    if (captured) hands[captured.color].push(captured.type);
+    board[mv.toR][mv.toC] = board[mv.fromR][mv.fromC];
+    board[mv.fromR][mv.fromC] = null;
+    if (board[mv.toR][mv.toC].type==='P'&&(mv.toR===0||mv.toR===3)) board[mv.toR][mv.toC].dir*=-1;
+  }
+  endTurn();
+}
+
+// ─── Win check for state object ───────────────────────────
+function checkWinState(s) {
+  const b = s.board;
+  for (let i=0;i<4;i++) {
+    const c=lineColorState(b,0,i,1,0)||lineColorState(b,i,0,0,1);
+    if (c) return c;
+  }
+  return lineColorState(b,0,0,1,1)||lineColorState(b,0,3,1,-1)||null;
+}
+function lineColorState(b,sr,sc,dr,dc) {
+  let color=null,r=sr,c=sc;
+  for (let i=0;i<4;i++) {
+    if (!b[r][c]) return null;
+    if (!color) color=b[r][c].color;
+    else if (b[r][c].color!==color) return null;
+    r+=dr; c+=dc;
+  }
+  return color;
+}
+
+// ─── Evaluation ───────────────────────────────────────────
+function evalState(s) {
+  const win = checkWinState(s);
+  if (win==='B') return 10000;
+  if (win==='W') return -10000;
+  let score = 0;
+  // Material + position
+  for (let r=0;r<4;r++) for (let c=0;c<4;c++) {
+    const p = s.board[r][c];
+    if (!p) continue;
+    const v = PIECE_VAL[p.type]*10 + POS_W[r][c];
+    score += p.color==='B' ? v : -v;
+  }
+  // Hand pieces
+  for (const t of s.hands.B) score += PIECE_VAL[t]*10;
+  for (const t of s.hands.W) score -= PIECE_VAL[t]*10;
+  // 4-in-a-row line progress
+  const lines = [
+    ...Array.from({length:4},(_,i)=>({sr:0,sc:i,dr:1,dc:0})), // cols
+    ...Array.from({length:4},(_,i)=>({sr:i,sc:0,dr:0,dc:1})), // rows
+    {sr:0,sc:0,dr:1,dc:1},{sr:0,sc:3,dr:1,dc:-1}              // diags
+  ];
+  for (const {sr,sc,dr,dc} of lines) {
+    const cells=[]; let r=sr,c=sc;
+    for (let i=0;i<4;i++) { cells.push(s.board[r][c]); r+=dr; c+=dc; }
+    const b=cells.filter(p=>p?.color==='B').length;
+    const w=cells.filter(p=>p?.color==='W').length;
+    if (w===0) score += b*b*3;
+    if (b===0) score -= w*w*3;
+  }
+  return score;
+}
+
+// ─── Medium heuristic ─────────────────────────────────────
+function heuristicChessMove(state, moves) {
+  let best=-Infinity, bestMove=moves[0];
+  moves = moves.slice().sort(()=>Math.random()-.5);
+  for (const mv of moves) {
+    const child = applyMoveToState(state, mv);
+    const win = checkWinState(child);
+    if (win==='B') return mv;
+    let score = evalState(child) + Math.random()*5;
+    if (score>best) { best=score; bestMove=mv; }
+  }
+  return bestMove;
+}
+
+// ─── Hard: minimax + alpha-beta ───────────────────────────
+function minimaxChessBest(state, moves, depth) {
+  moves = moves.slice().sort(()=>Math.random()-.5);
+  let best=-Infinity, bestMove=moves[0];
+  for (const mv of moves) {
+    const child = applyMoveToState(state, mv);
+    const score = chessMin(child, depth-1, -Infinity, Infinity);
+    if (score>best) { best=score; bestMove=mv; }
+  }
+  return bestMove;
+}
+function chessMax(s, depth, alpha, beta) {
+  const win=checkWinState(s); if(win==='B') return 10000+depth; if(win==='W') return -10000-depth;
+  if(depth===0) return evalState(s);
+  const moves=getAllLegalMovesForColor(s,'B');
+  if(!moves.length) return evalState(s);
+  let best=-Infinity;
+  for(const mv of moves){
+    const val=chessMin(applyMoveToState(s,mv),depth-1,alpha,beta);
+    best=Math.max(best,val);alpha=Math.max(alpha,best);if(beta<=alpha)break;
+  }
+  return best;
+}
+function chessMin(s, depth, alpha, beta) {
+  const win=checkWinState(s); if(win==='B') return 10000+depth; if(win==='W') return -10000-depth;
+  if(depth===0) return evalState(s);
+  const moves=getAllLegalMovesForColor(s,'W');
+  if(!moves.length) return evalState(s);
+  let best=Infinity;
+  for(const mv of moves){
+    const val=chessMax(applyMoveToState(s,mv),depth-1,alpha,beta);
+    best=Math.min(best,val);beta=Math.min(beta,best);if(beta<=alpha)break;
+  }
+  return best;
+}
+
+function getAllLegalMovesForColor(state, color) {
+  const moves=[];
+  const isPhase2=state.turnCount>6;
+  for(const pieceType of new Set(state.hands[color])){
+    for(let r=0;r<4;r++) for(let c=0;c<4;c++)
+      if(!state.board[r][c]) moves.push({type:'place',pieceType,color,toR:r,toC:c});
+  }
+  if(isPhase2){
+    for(let r=0;r<4;r++) for(let c=0;c<4;c++){
+      const p=state.board[r][c];
+      if(p&&p.color===color){
+        for(const {r:tr,c:tc} of getBotMovesForPiece(state.board,r,c,p))
+          moves.push({type:'move',pieceType:p.type,color,fromR:r,fromC:c,toR:tr,toC:tc});
+      }
+    }
+  }
+  // For W moves in minimax, apply as W (override color in applyMoveToState variant)
+  return moves.map(mv => ({...mv, _forColor:color}));
+}
+
+// ──────────────────────────────────────────────────────────
+//  MODE BAR EVENTS
+// ──────────────────────────────────────────────────────────
+function setChessMode(mode) {
+  botMode = mode;
+  const pvpBtn = document.getElementById('mode-pvp');
+  const botBtn = document.getElementById('mode-bot');
+  const dg     = document.getElementById('diff-group');
+  const goldStyle = 'padding:5px 13px;border-radius:8px;border:1px solid rgba(201,168,76,.35);font-family:\'Cinzel\',serif;font-size:.68rem;font-weight:600;cursor:pointer;color:#c9a84c;background:rgba(30,33,56,.9);transition:all .2s;letter-spacing:.03em;';
+  const dimStyle  = 'padding:5px 13px;border-radius:8px;border:1px solid transparent;font-family:\'Cinzel\',serif;font-size:.68rem;font-weight:600;cursor:pointer;color:#8a8aaa;background:transparent;transition:all .2s;letter-spacing:.03em;';
+  pvpBtn.style.cssText = mode===null ? goldStyle : dimStyle;
+  botBtn.style.cssText = mode!==null ? goldStyle : dimStyle;
+  dg.style.opacity = mode===null ? '.25' : '1';
+  dg.style.pointerEvents = mode===null ? 'none' : 'auto';
+  ['easy','medium','hard'].forEach(d=>{
+    const btn=document.getElementById(`diff-${d}`);
+    btn.style.cssText = mode===d ? goldStyle : dimStyle;
+  });
+  resetGame();
+}
+
+document.getElementById('mode-pvp').addEventListener('click', ()=>setChessMode(null));
+document.getElementById('mode-bot').addEventListener('click', ()=>{ if(!botMode)setChessMode('medium'); });
+document.getElementById('diff-easy').addEventListener('click',   ()=>setChessMode('easy'));
+document.getElementById('diff-medium').addEventListener('click', ()=>setChessMode('medium'));
+document.getElementById('diff-hard').addEventListener('click',   ()=>setChessMode('hard'));
+
+// ── Events ────────────────────────────────────────────
+document.getElementById('play-again-btn').addEventListener('click', resetGame);
+document.getElementById('new-btn').addEventListener('click', () => {
+  if (gameState==='won' || confirm('Start a new game?')) resetGame();
+});
+document.getElementById('info-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+document.getElementById('close-modal').addEventListener('click', () => modal.classList.add('hidden'));
+modal.addEventListener('click', e => { if (e.target===modal) modal.classList.add('hidden'); });
+winOverlay.addEventListener('click', e => { if (e.target===winOverlay) winOverlay.classList.add('hidden'); });
+
+// ── Boot ──────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
+
+
