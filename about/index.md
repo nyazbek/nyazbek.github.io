@@ -1,8 +1,8 @@
 ---
 layout: default
-title: About Me
+title: About
 ---
 
-# About Me
-  
-Write about yourself in markdown
+# About
+
+Write about yourself in markdown.

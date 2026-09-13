@@ -1,8 +1,64 @@
+/* ── Essay header ───────────────────────────────────── */
+.essay-header h1 { margin-bottom: 0.6rem; }
+
+.essay-description {
+  font-size: 1.12em;
+  font-style: italic;
+  color: var(--muted);
+  margin: 0 0 0.9rem;
+  line-height: 1.5;
+}
+[data-theme="dark"] .essay-description { font-style: normal; }
+
+.essay-meta {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin: 0 0 2.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.essay-meta .sep { margin: 0 0.2em; opacity: 0.6; }
+
+/* ── Table of contents ──────────────────────────────── */
+.toc {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  background: var(--bkg-alt);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.85rem 1.25rem;
+  margin: 0 0 2.25rem;
+  max-width: 24rem;
+}
+.toc-title {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.toc ol {
+  margin: 0;
+  padding-left: 1.4rem;
+}
+.toc ol ol { padding-left: 1.2rem; }
+.toc li { margin: 0.1rem 0; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
 /* ── Heading anchors (show # on hover) ─────────────── */
-h2::after, h3::after {
+.essay-body h2 a, .essay-body h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+.essay-body h2::after, .essay-body h3::after {
   content: " #";
   font-size: 0.75em;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-weight: 400;
   font-style: normal;
   color: var(--border);
@@ -10,42 +66,21 @@ h2::after, h3::after {
   opacity: 0;
   transition: opacity 0.2s;
 }
-h2:hover::after, h3:hover::after {
+.essay-body h2:hover::after, .essay-body h3:hover::after {
   visibility: visible;
   opacity: 1;
 }
 
-/* ── Post navigation (fixed bottom-right) ───────────── */
-.backButton {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  align-items: flex-end;
+/* ── Essay footer ───────────────────────────────────── */
+.essay-footer {
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
 }
-.backButton a {
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+.essay-footer a {
   color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 0.2rem 0.55rem;
-  background: var(--bkg);
   text-decoration: none;
-  white-space: nowrap;
-  opacity: 0.7;
-  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
 }
-.backButton a:hover {
-  opacity: 1;
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-@media (max-width: 560px) {
-  .backButton { bottom: 1rem; right: 0.75rem; }
-}
+.essay-footer a:hover { color: var(--accent); }

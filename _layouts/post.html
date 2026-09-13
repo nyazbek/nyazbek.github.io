@@ -1,48 +1,71 @@
 ---
 layout: default
 ---
-<h1>{{ page.title }}</h1>
-<p class="meta">{{ page.date | date_to_string }}</p>
+<article class="essay">
+  <header class="essay-header">
+    <h1>{{ page.title }}</h1>
+    {% if page.description %}<p class="essay-description">{{ page.description }}</p>{% endif %}
+    <p class="essay-meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}" title="created">{{ page.date | date: "%Y-%m-%d" }}</time>{% if page.modified %}–<time datetime="{{ page.modified | date_to_xmlschema }}" title="last modified">{{ page.modified | date: "%Y-%m-%d" }}</time>{% endif %}
+      {% if page.status %}<span class="sep">·</span> {{ page.status }}{% endif %}
+      {% if page.confidence %}<span class="sep">·</span> certainty: {{ page.confidence }}{% endif %}
+      {% if page.importance %}<span class="sep">·</span> importance: {{ page.importance }}{% endif %}
+      {% if page.tags.size > 0 %}<span class="sep">·</span> {{ page.tags | join: ", " }}{% endif %}
+    </p>
+  </header>
 
-{% if page.abstract.size > 0 %}
-<p class="abstract"> {{ page.abstract }}</p>
-<hr/>
-{% endif %}
+  {% if page.abstract %}
+  <div class="abstract">{{ page.abstract | markdownify }}</div>
+  {% endif %}
 
-<div class="post">
-  {{ content | toc }}
-</div>
-<div class="backButton">
-<a href="https://twitter.com/intent/tweet?text={{ page.title }}&url={{ site.url }}{{ page.url }}%2F%3Futm_source%3Dtwitter%26utm_medium%3Dsocial&via={{page.twitter_username}}" id='tweetThis'><i class="fab fa-twitter"></i>[Tweet this!]</a>
-<br/>
-<a href="/wiki/navigation-guide?utm_medium=tocButton" id='tocButton'><i class="fa fa-map-signs" aria-hidden="true"></i>[Contents]</a>
-<br/>
-<a href="/wiki?utm_medium=backButton" id='backToWiki'><-[Back to wiki]</a>
-</div>
+  {% unless page.toc == false %}
+  <nav class="toc" id="toc" hidden>
+    <div class="toc-title">Contents</div>
+    <ol id="toc-list"></ol>
+  </nav>
+  {% endunless %}
+
+  <div class="essay-body" id="essay-body">
+    {{ content }}
+  </div>
+
+  <footer class="essay-footer">
+    <a href="/">&larr; Index</a>
+  </footer>
+</article>
 
 <script>
-const headings = document.querySelectorAll('h2[id],h3[id]');
-for (var heading of headings) {
-    heading.innerHTML = `<a href=#${heading.id}>${heading.innerHTML}</a>`;
-}
-var windowWidth = window.innerWidth;
-var maxDeviceWidth = 768;
-if (windowWidth < maxDeviceWidth) {
-	document.getElementById('tweetThis').innerHTML=`[<i class="fab fa-twitter"></i>]`
-  document.getElementById('tocButton').innerHTML=`[<i class="fa fa-map-signs" aria-hidden="true"></i>]`
-	document.getElementById('backToWiki').innerHTML=`[<i class="fa fa-arrow-left"></i>]`
-}
+(function () {
+  var body = document.getElementById('essay-body');
+  var headings = body.querySelectorAll('h2[id], h3[id]');
 
+  // Make headings self-linking
+  headings.forEach(function (h) {
+    h.innerHTML = '<a href="#' + h.id + '">' + h.innerHTML + '</a>';
+  });
 
+  // Build table of contents (only if there's enough structure to warrant one)
+  var toc = document.getElementById('toc');
+  if (!toc || headings.length < 2) return;
+  var list = document.getElementById('toc-list');
+  var currentH2 = null;
+  headings.forEach(function (h) {
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    if (h.tagName === 'H2') {
+      list.appendChild(li);
+      currentH2 = li;
+    } else if (currentH2) {
+      var sub = currentH2.querySelector('ol');
+      if (!sub) { sub = document.createElement('ol'); currentH2.appendChild(sub); }
+      sub.appendChild(li);
+    } else {
+      list.appendChild(li);
+    }
+  });
+  toc.hidden = false;
+})();
 </script>
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site" content="@{{ page.twitter_username }}" />
-<meta name="twitter:title" content="{{ page.title }}" />
-<meta name="twitter:description" content="{{ page.description }}" />
-{% if page.twitter_image.size > 0 %}
-<meta name="twitter:image:src" content="{{ page.twitter_image }}" />
-{% else %}
-<meta name="twitter:image:src" content="{{ site.url }}/resources/placeholder.png" />
-{% endif %}
-
-<link rel="stylesheet" type="text/css" href="/css/post.css">

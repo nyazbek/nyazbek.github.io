@@ -2,15 +2,39 @@
 layout: default
 title: Nahuel Yazbek
 ---
-<h1>Nahuel Yazbek</h1>
+<p class="intro">Profile description — a few sentences about who you are and what you work on.</p>
 
-<p>Profile description — a few sentences about who you are and what you work on.</p>
+<p class="intro">This site is a collection of essays and notes. Some are finished, most are working drafts; each one is marked with its status and how confident I am in it. Newest first within each section. There is also an <a href="/feed.xml">Atom feed</a>.</p>
 
-<p>This site is a <a href="/wiki/">personal wiki</a> — notes, essays, and references I've accumulated over time. Some are polished, most are working drafts. There's also an occasional <a href="/blog/">blog post</a>.</p>
+{% comment %}
+  Posts are grouped by the optional `section` front-matter key.
+  Posts without a section are listed at the end under "Writing".
+{% endcomment %}
+{% assign sections = site.posts | map: "section" | compact | uniq %}
 
-<ul>
-  <li><a href="/wiki/">Wiki</a> — notes and most of this site's content</li>
-  <li><a href="/wiki/navigation-guide">Index</a> — table of contents by topic</li>
-  <li><a href="/blog/">Blog</a> — longer pieces</li>
-  <li><a href="/about/">About</a> — more about me</li>
+{% for section in sections %}
+<h2>{{ section }}</h2>
+<ul class="index">
+  {% for post in site.posts %}{% if post.section == section %}
+  <li>
+    <a href="{{ post.url }}">{{ post.title }}</a>{% if post.description %}<span class="index-desc"> — {{ post.description }}</span>{% endif %}
+    <span class="index-date">{{ post.date | date: "%Y" }}</span>
+  </li>
+  {% endif %}{% endfor %}
 </ul>
+{% endfor %}
+
+{% assign has_unsectioned = false %}
+{% for post in site.posts %}{% unless post.section %}{% assign has_unsectioned = true %}{% endunless %}{% endfor %}
+
+{% if has_unsectioned %}
+<h2>Writing</h2>
+<ul class="index">
+  {% for post in site.posts %}{% unless post.section %}
+  <li>
+    <a href="{{ post.url }}">{{ post.title }}</a>{% if post.description %}<span class="index-desc"> — {{ post.description }}</span>{% endif %}
+    <span class="index-date">{{ post.date | date: "%Y" }}</span>
+  </li>
+  {% endunless %}{% endfor %}
+</ul>
+{% endif %}

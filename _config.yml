@@ -1,4 +1,11 @@
-name: Personal Wiki Setup
+title: Nahuel Yazbek
+url: https://nyazbek.github.io
+description: Essays and notes by Nahuel Yazbek.
+author: Nahuel Yazbek
+email: nahuelayazbek@gmail.com
+twitter_username: nahbek
+ga_id: G-9D0H2T76M6
+
 permalink: /:title
 
 markdown: kramdown
@@ -6,16 +13,16 @@ kramdown:
   input: GFM
   auto_ids: true
 
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - minify_css.sh
+  - suffix_stats.sh
+
 defaults:
-  -
-    scope:
+  - scope:
       path: ""
+      type: posts
     values:
-      twitter_username: "nahbek"
-      ga_id: "G-9D0H2T76M6"
-    scope:
-      path: "wiki/" # an empty string here means all files in the project
-    values:
-      importance: 5
       layout: post
-      
