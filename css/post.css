@@ -8,7 +8,6 @@
   margin: 0 0 0.9rem;
   line-height: 1.5;
 }
-[data-theme="dark"] .essay-description { font-style: normal; }
 
 .essay-meta {
   font-family: var(--font-ui);

@@ -1,24 +1,17 @@
-/* ── Warm theme (default) ───────────────────────────── */
-:root, [data-theme="warm"] {
-  --bkg:          #fdfbf7;
-  --bkg-alt:      #f3f0e8;
-  --text:         #111827;
-  --muted:        #6b7280;
-  --accent:       #1e3a52;
-  --gold:         #8b6914;
-  --border:       #e2ddd4;
-  --code-bkg:     #f3f0e8;
-  --font-body:    "Crimson Pro", "Georgia", serif;
-  --font-heading: "Cormorant Garamond", "Georgia", serif;
+/* ── Typography (shared by both themes) ────────────── */
+:root {
+  --font-body:    "Source Serif 4", "Georgia", serif;
+  --font-heading: "Source Serif 4", "Georgia", serif;
   --font-ui:      "Inter", system-ui, sans-serif;
-  --size-body:    1.15rem;
-  --size-h1:      2.4rem;
-  --size-h2:      1.65rem;
-  --size-h3:      1.3rem;
+  --size-body:    1.1rem;
+  --size-h1:      2.1rem;
+  --size-h2:      1.5rem;
+  --size-h3:      1.2rem;
 }
 
-/* ── Dark theme ─────────────────────────────────────── */
-[data-theme="dark"] {
+/* ── Dark theme (default) ───────────────────────────── */
+:root, [data-theme="dark"] {
+  color-scheme:   dark;
   --bkg:          #111110;
   --bkg-alt:      #1a1a18;
   --text:         #d6d2c8;
@@ -27,13 +20,19 @@
   --gold:         #c9a96e;
   --border:       #2e2e2a;
   --code-bkg:     #1a1a18;
-  --font-body:    "Inter", system-ui, sans-serif;
-  --font-heading: "Inter", system-ui, sans-serif;
-  --font-ui:      "Inter", system-ui, sans-serif;
-  --size-body:    1.0rem;
-  --size-h1:      1.9rem;
-  --size-h2:      1.3rem;
-  --size-h3:      1.1rem;
+}
+
+/* ── Warm theme ─────────────────────────────────────── */
+[data-theme="warm"] {
+  color-scheme:   light;
+  --bkg:          #fdfbf7;
+  --bkg-alt:      #f3f0e8;
+  --text:         #111827;
+  --muted:        #6b7280;
+  --accent:       #1e3a52;
+  --gold:         #8b6914;
+  --border:       #e2ddd4;
+  --code-bkg:     #f3f0e8;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -92,7 +91,6 @@ h3 {
   margin: 2rem 0 0.5rem;
   color: var(--muted);
 }
-[data-theme="dark"] h3 { font-style: normal; }
 
 /* ── Header ─────────────────────────────────────────── */
 .site-header {
@@ -286,8 +284,8 @@ hr {
 }
 
 /* ── Selection ──────────────────────────────────────── */
-[data-theme="warm"] ::selection, ::selection { background: #c8d8e8; color: #111827; }
-[data-theme="dark"]  ::selection              { background: #2a4a62; color: #d6d2c8; }
+::selection, [data-theme="dark"] ::selection { background: #2a4a62; color: #d6d2c8; }
+[data-theme="warm"] ::selection               { background: #c8d8e8; color: #111827; }
 
 /* ── Theme toggle button ────────────────────────────── */
 .theme-toggle {
